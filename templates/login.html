@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Sign in — Student Record System{% endblock %}
+{% block body %}
+<main class="auth-shell" id="main-content">
+  <section class="auth-card" aria-labelledby="login-heading">
+    <div class="brand-mark" aria-hidden="true">SR</div>
+    <p class="eyebrow">Student Record System</p>
+    <h1 id="login-heading">Sign in</h1>
+    <p class="muted">Use your institutional login ID and password.</p>
+    <div id="login-error" class="alert error" role="alert" hidden></div>
+    <form id="login-form" novalidate>
+      {% csrf_token %}
+      <div class="field">
+        <label for="login-id">Login ID</label>
+        <input id="login-id" name="loginId" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="button primary full" type="submit">Sign in</button>
+    </form>
+    <p class="auth-help"><a href="#forgot" id="forgot-link">Forgot password?</a></p>
+    <div id="forgot-panel" class="subpanel" hidden>
+      <h2>Reset password</h2>
+      <p class="muted">A one-time password will be sent to the registered email.</p>
+      <form id="forgot-form">
+        <label for="forgot-email">Registered email</label>
+        <input id="forgot-email" type="email" required>
+        <button class="button secondary" type="submit">Send OTP</button>
+      </form>
+      <form id="reset-form" hidden>
+        <label for="reset-email">Email</label>
+        <input id="reset-email" type="email" required>
+        <label for="reset-otp">One-time password</label>
+        <input id="reset-otp" inputmode="numeric" autocomplete="one-time-code" required>
+        <label for="reset-password">New password</label>
+        <input id="reset-password" type="password" minlength="10" required>
+        <button class="button primary" type="submit">Reset password</button>
+      </form>
+      <div id="reset-message" class="alert" role="status" hidden></div>
+    </div>
+  </section>
+</main>
+{% endblock %}
