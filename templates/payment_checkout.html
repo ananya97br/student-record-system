@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Mock payment checkout{% endblock %}
+{% block body %}
+<main class="auth-shell" id="main-content"><section class="auth-card"><p class="eyebrow">Local payment sandbox</p><h1>Mock checkout</h1><p class="muted">This development gateway does not request or store card data.</p><dl class="definition-list"><dt>Amount</dt><dd>{{ payment.amount }} {{ payment.currency }}</dd><dt>Payment reference</dt><dd>{{ payment.payment_reference }}</dd><dt>Status</dt><dd>{{ payment.status }}</dd></dl>{% if message %}<div class="alert success" role="status">{{ message }}</div>{% endif %}<form method="post" class="stacked-actions">{% csrf_token %}<button class="button primary" name="action" value="SUCCESS" type="submit">Simulate success</button><button class="button danger" name="action" value="FAILED" type="submit">Simulate failure</button><button class="button secondary" name="action" value="CANCELLED" type="submit">Cancel payment</button></form><p><a href="/portal/fees">Return to fees</a></p></section></main>
+{% endblock %}

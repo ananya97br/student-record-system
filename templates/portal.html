@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ section|title }} — Student Record System{% endblock %}
+{% block body %}
+<div class="app-shell">
+  <header class="topbar">
+    <a class="wordmark" href="/portal/dashboard"><span class="brand-mark small" aria-hidden="true">SR</span><span>Student Record System</span></a>
+    <div class="topbar-actions">
+      <span id="current-user" class="user-chip" aria-live="polite">Loading account…</span>
+      <button class="button text-button" type="button" id="logout-button">Sign out</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Main navigation">
+      <nav>
+        <a href="/portal/dashboard" class="nav-link {% if section == 'dashboard' %}active{% endif %}">Dashboard</a>
+        {% if role == 'STUDENT' %}
+        <p class="nav-heading">Student</p>
+        <a href="/portal/profile" class="nav-link {% if section == 'profile' %}active{% endif %}">Profile & requests</a>
+        <a href="/portal/documents" class="nav-link {% if section == 'documents' %}active{% endif %}">Documents</a>
+        <a href="/portal/enrollment" class="nav-link {% if section == 'enrollment' %}active{% endif %}">Course enrollment</a>
+        <a href="/portal/attendance" class="nav-link {% if section == 'attendance' %}active{% endif %}">My attendance</a>
+        <a href="/portal/grades" class="nav-link {% if section == 'grades' %}active{% endif %}">Grades & GPA</a>
+        <a href="/portal/transcript" class="nav-link {% if section == 'transcript' %}active{% endif %}">Transcript</a>
+        <a href="/portal/fees" class="nav-link {% if section == 'fees' %}active{% endif %}">Fees & payments</a>
+        {% elif role == 'FACULTY' %}
+        <p class="nav-heading">Faculty</p>
+        <a href="/portal/faculty" class="nav-link {% if section == 'faculty' %}active{% endif %}">Assigned courses</a>
+        {% elif role == 'ADMIN' or role == 'SYSADMIN' %}
+        <p class="nav-heading">Administration</p>
+        <a href="/portal/admin" class="nav-link {% if section == 'admin' %}active{% endif %}">Administration</a>
+        <a href="/portal/reports" class="nav-link {% if section == 'reports' %}active{% endif %}">Reports & exports</a>
+        <a href="/portal/audit" class="nav-link {% if section == 'audit' %}active{% endif %}">Audit & alerts</a>
+        <a href="/portal/configuration" class="nav-link {% if section == 'configuration' %}active{% endif %}">System configuration</a>
+        {% endif %}
+      </nav>
+    </aside>
+    <main class="content" id="main-content" data-section="{{ section }}">
+      <div id="page-alert" class="alert" role="status" hidden></div>
+      {% if section == 'dashboard' %}
+      <section class="page-header"><p class="eyebrow">Overview</p><h1 id="dashboard-title">Dashboard</h1><p class="muted">Your secure academic record workspace.</p></section>
+      <section id="dashboard-cards" class="card-grid" aria-live="polite"><div class="loading-card">Loading dashboard…</div></section>
+       <section class="panel"><h2>Quick actions</h2><div class="quick-links">{% if role == 'STUDENT' %}<a class="button secondary" href="/portal/enrollment">Find courses</a><a class="button secondary" href="/portal/transcript">Download transcript</a>{% elif role == 'FACULTY' %}<a class="button secondary" href="/portal/faculty">Open gradebook</a>{% elif role == 'ADMIN' or role == 'SYSADMIN' %}<a class="button secondary" href="/portal/reports">View reports</a>{% endif %}</div></section>
+      {% elif section == 'profile' %}
+      <section class="page-header"><p class="eyebrow">Student records</p><h1>Profile & change requests</h1><p class="muted">Verified changes are reviewed by authorized administration staff.</p></section>
+      <section class="two-column"><div class="panel"><h2>Current profile</h2><div id="profile-details" class="definition-list">Loading…</div></div><div class="panel"><h2>Request a contact update</h2><form id="profile-form"><label for="profile-phone">Phone</label><input id="profile-phone"><label for="profile-address">Address</label><textarea id="profile-address" rows="3"></textarea><label for="emergency-name">Emergency contact name</label><input id="emergency-name"><label for="emergency-phone">Emergency contact phone</label><input id="emergency-phone"><button class="button primary" type="submit">Submit for approval</button></form></div></section>
+      <section class="panel"><h2>Request history</h2><div id="change-requests" class="table-wrap">Loading…</div></section>
+      {% elif section == 'documents' %}
+      <section class="page-header"><p class="eyebrow">Student records</p><h1>Documents</h1><p class="muted">PDF and JPEG files up to 5 MB are scanned before becoming available.</p></section>
+      <section class="panel"><form id="document-form" class="inline-form" enctype="multipart/form-data"><label for="document-file">Upload document</label><input id="document-file" type="file" accept=".pdf,.jpg,.jpeg" required><button class="button primary" type="submit">Upload securely</button></form></section>
+      <section class="panel"><h2>My documents</h2><div id="documents-table" class="table-wrap">Loading…</div></section>
+      {% elif section == 'enrollment' %}
+      <section class="page-header"><p class="eyebrow">Academic planning</p><h1>Course catalog & enrollment</h1><p class="muted">Eligibility, prerequisites, seats, and the add/drop deadline are checked again by the server.</p></section>
+      <section class="panel"><div class="toolbar"><label for="semester-select">Semester <select id="semester-select"><option value="">Current semester</option></select></label><button class="button secondary" id="refresh-catalog" type="button">Refresh</button></div><div id="catalog-table" class="table-wrap">Loading…</div></section>
+      <section class="panel"><h2>My enrollments</h2><div id="enrollments-table" class="table-wrap">Loading…</div></section>
+      {% elif section == 'attendance' %}
+      <section class="page-header"><p class="eyebrow">Academic progress</p><h1>My attendance</h1><p class="muted">The configured threshold is shown for every course.</p></section><section class="panel"><div id="attendance-table" class="table-wrap">Loading…</div></section>
+      {% elif section == 'grades' %}
+      <section class="page-header"><p class="eyebrow">Academic progress</p><h1>Grades & GPA</h1><p class="muted">Only finalized results are included in GPA and CGPA calculations.</p></section><section class="card-grid" id="gpa-cards"></section><section class="panel"><div id="grades-table" class="table-wrap">Loading…</div></section>
+      {% elif section == 'transcript' %}
+      <section class="page-header"><p class="eyebrow">Official records</p><h1>Transcript</h1><p class="muted">The PDF is generated from locked authoritative results and contains a verification code.</p></section><section class="panel"><h2>Official transcript</h2><p>Generate a current transcript PDF whenever you need one.</p><a class="button primary" href="/api/grades/transcript">Download transcript PDF</a><div id="transcript-info" class="subpanel" hidden></div></section>
+      {% elif section == 'fees' %}
+      <section class="page-header"><p class="eyebrow">Student account</p><h1>Fees & payments</h1><p class="muted">Payments use the local sandbox and never request card information.</p></section><section class="panel"><div id="invoices-table" class="table-wrap">Loading…</div></section>
+      {% elif section == 'faculty' %}
+      <section class="page-header"><p class="eyebrow">Teaching workspace</p><h1>Assigned courses</h1><p class="muted">Only offerings assigned to your faculty account are shown.</p></section><section class="panel"><div id="faculty-offerings" class="table-wrap">Loading…</div></section><section class="panel"><h2>Attendance and gradebook</h2><p>Choose an assigned offering above to open its roster, sessions, assessment components, and grade entry controls.</p><div id="faculty-workspace" class="subpanel">Select an offering.</div></section>
+      {% elif section == 'admin' %}
+      <section class="page-header"><p class="eyebrow">Administration</p><h1>System administration</h1><p class="muted">Manage master data, accounts, approvals, security alerts, fees, grading, and academic offerings.</p></section><section class="card-grid" id="admin-summary"></section><section class="panel"><h2>Pending profile approvals</h2><div id="admin-requests" class="table-wrap">Loading…</div></section><section class="panel"><h2>Users and roles</h2><div id="users-table" class="table-wrap">Loading…</div></section>
+      <section class="panel"><h2>Academic master data</h2><div class="two-column"><form id="program-form"><h3>Program</h3><label for="program-code">Code</label><input id="program-code" required><label for="program-name">Name</label><input id="program-name" required><button class="button secondary" type="submit">Create program</button></form><form id="course-form"><h3>Course</h3><label for="course-code">Code</label><input id="course-code" required><label for="course-title">Title</label><input id="course-title" required><label for="course-credits">Credits</label><input id="course-credits" type="number" min="1" required><button class="button secondary" type="submit">Create course</button></form></div></section>
+      <section class="panel"><h2>Semester and offering</h2><div class="two-column"><form id="semester-form"><h3>Semester</h3><label for="semester-code">Code</label><input id="semester-code" required><label for="semester-name">Name</label><input id="semester-name" required><label for="semester-start">Start date</label><input id="semester-start" type="date" required><label for="semester-end">End date</label><input id="semester-end" type="date" required><label for="semester-deadline">Add/drop deadline</label><input id="semester-deadline" type="datetime-local" required><button class="button secondary" type="submit">Create semester</button></form><form id="offering-form"><h3>Course offering</h3><label for="offering-course">Course</label><select id="offering-course" required></select><label for="offering-semester">Semester</label><select id="offering-semester" required></select><label for="offering-capacity">Capacity</label><input id="offering-capacity" type="number" min="1" required><label for="offering-faculty">Faculty profile ID (optional)</label><input id="offering-faculty" type="number"><button class="button secondary" type="submit">Create offering</button></form></div></section>
+      <section class="panel"><h2>Grading, fees, and scholarships</h2><p>Use the <a href="/portal/configuration">configuration</a> page for threshold/retention settings. The REST forms for grading schemes, fee structures, scholarships, prerequisites, assignments, and controlled grade overrides are documented at <a href="/api/docs">/api/docs</a> and enforce the same admin policy.</p></section>
+      {% elif section == 'reports' %}
+      <section class="page-header"><p class="eyebrow">Administration</p><h1>Reports & exports</h1><p class="muted">Screen and PDF/XLSX exports use the same filtered data query. Exports are audited.</p></section><section class="report-links"><a class="panel report-card" href="/api/reports/enrollment">Enrollment statistics</a><a class="panel report-card" href="/api/reports/attendance">Attendance summary</a><a class="panel report-card" href="/api/reports/fees">Fee collection</a><a class="panel report-card" href="/api/reports/grades">Grade distribution</a></section><section class="panel"><h2>Download exports</h2><p><a href="/api/reports/enrollment?format=pdf">Enrollment PDF</a> · <a href="/api/reports/enrollment?format=xlsx">Enrollment XLSX</a> · <a href="/api/reports/attendance?format=xlsx">Attendance XLSX</a> · <a href="/api/reports/fees?format=pdf">Fees PDF</a> · <a href="/api/reports/grades?format=xlsx">Grades XLSX</a></p></section>
+      {% elif section == 'audit' %}
+      <section class="page-header"><p class="eyebrow">Governance</p><h1>Audit log & security alerts</h1><p class="muted">Audit records are append-only and access attempts are logged.</p></section><section class="panel"><h2>Security alerts</h2><div id="alerts-table" class="table-wrap">Loading…</div></section><section class="panel"><h2>Recent audit actions</h2><div id="audit-table" class="table-wrap">Loading…</div></section>
+      {% elif section == 'configuration' %}
+      <section class="page-header"><p class="eyebrow">Governance</p><h1>System configuration</h1><p class="muted">Changes are audited. Master data is managed through the catalog APIs and admin controls.</p></section><section class="panel"><form id="config-form"><label for="attendance-threshold">Attendance threshold (%)</label><input id="attendance-threshold" type="number" min="0" max="100"><label for="institution-name">Institution display name</label><input id="institution-name"><label for="retention-years">Retention years</label><input id="retention-years" type="number" min="10"><button class="button primary" type="submit">Save configuration</button></form></section>
+      {% endif %}
+    </main>
+  </div>
+</div>
+{% endblock %}
