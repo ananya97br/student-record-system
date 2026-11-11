@@ -22,6 +22,8 @@ from .services import can_edit, percentage_for, threshold
 
 
 def _faculty_can(request, offering):
+    # Administrative roles can supervise every offering; faculty access is
+    # limited to the faculty profile explicitly assigned to this offering.
     if request.user.role in {User.Role.ADMIN, User.Role.SYSADMIN}:
         return True
     return request.user.role == User.Role.FACULTY and offering.faculty and offering.faculty.user_id == request.user.pk
@@ -46,6 +48,7 @@ def roster(request, offering_id):
     offering = CourseOffering.objects.select_related("course", "semester", "faculty").filter(pk=offering_id).first()
     if not offering:
         return error_response("NOT_FOUND", "Offering not found.", request.correlation_id, 404)
+    # Apply the same ownership check before exposing a roster or session data.
     if not _faculty_can(request, offering):
         audit(request, "AUTHORIZATION_DENIED", "CourseOffering", offering.id)
         return error_response("FORBIDDEN", "You are not assigned to this offering.", request.correlation_id, 403)
@@ -60,6 +63,7 @@ def sessions(request, offering_id):
     offering = CourseOffering.objects.select_related("course", "semester", "faculty").filter(pk=offering_id).first()
     if not offering:
         return error_response("NOT_FOUND", "Offering not found.", request.correlation_id, 404)
+    # Session creation and listing use the same assignment boundary as roster access.
     if not _faculty_can(request, offering):
         audit(request, "AUTHORIZATION_DENIED", "CourseOffering", offering.id)
         return error_response("FORBIDDEN", "You are not assigned to this offering.", request.correlation_id, 403)
@@ -92,6 +96,7 @@ def bulk_records(request, session_id):
     if not _faculty_can(request, session.offering):
         audit(request, "AUTHORIZATION_DENIED", "AttendanceSession", session.id)
         return error_response("FORBIDDEN", "You are not assigned to this offering.", request.correlation_id, 403)
+    # Attendance corrections remain available only during the 48-hour edit window.
     if not can_edit(session):
         return error_response("ATTENDANCE_WINDOW_CLOSED", "Attendance can only be edited within 48 hours.", request.correlation_id, 409)
     data = parse_json(request) or {}
