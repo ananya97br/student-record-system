@@ -67,7 +67,7 @@ The current P-005 documentation snapshot is in
 | F-004 / TC-Reg-01 | Admin create and generated ID | Student administration page |
 | F-005 / TC-Reg-02 | Pending profile then approval | Admin approval UI |
 | F-006 / TC-Reg-03 | Clean/infected/ownership document checks | Browser upload flow |
-| F-007 / TC-Enr-01 | Current semester/eligibility response | Catalog UI |
+| F-007 / TC-Enr-01 | Eligible-list response contains only the seeded current semester and at least one eligible offering | Verify prerequisite-complete and prerequisite-missing cases, and review ineligible reasons in the catalog UI |
 | F-008 / TC-Enr-02 | Duplicate/full seat checks and transactional service | MySQL concurrency profile |
 | F-009 / TC-Enr-03 | Drop releases seat | Deadline error path |
 | F-010 / TC-Att-01 | Faculty assignment access | Bulk session UI/API |
@@ -83,7 +83,7 @@ The current P-005 documentation snapshot is in
 | NF-002 | Live/ready endpoints and Docker health | Monitoring/uptime procedure |
 | NF-003 / TC-Sec-01 | Password/encryption tests | Security checklist |
 | NF-004 / TC-Ops-01 | Configuration and backup/restore scripts | Synthetic retention review |
-| NF-005 / TC-UX-01 | Semantic HTML/focus/contrast implementation | Browser axe/manual review |
+| NF-005 / TC-UX-01, TC-UX-02 | Portal accessibility markup assertions; student/faculty/admin navigation visibility and access restrictions | Keyboard, focus, screen-reader, and contrast review; browser axe review |
 | NF-006 / TC-Perf-02 | k6 10,000-user executable profile | No unexecuted performance claim |
 | SR-001 / TC-Sec-02 | Single Nginx public entry point on port 8000; production HTTPS termination remains an infrastructure concern | Browser/ proxy review |
 | SR-002 / TC-Sec-03 | Argon2 settings and no plaintext test | Log review |
@@ -96,5 +96,8 @@ Regression coverage includes duplicate enrollment, full-seat behavior, duplicate
 P-008 local validation evidence and its environment limitations are recorded in
 [P-008.md](evidence/P-008.md).
 
-SR-004 targeted test results and alert-review guidance are recorded in
-[SR-004.md](evidence/SR-004.md).
+NF-005 test results and the remaining accessibility review items are recorded
+in [NF-005.md](evidence/NF-005.md).
+
+F-007 eligible-offering test results and prerequisite-check limitations are
+recorded in [F-007.md](evidence/F-007.md).
