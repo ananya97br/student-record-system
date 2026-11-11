@@ -40,6 +40,7 @@ def check_eligibility(student, offering, now=None) -> Eligibility:
     passed, missing = prerequisite_state(student, offering.course)
     if not passed:
         return Eligibility(False, f"Prerequisite(s) incomplete: {', '.join(missing)}")
+    # Block duplicate active or completed enrollments while allowing dropped rows to re-enroll.
     existing = Enrollment.objects.filter(student=student, offering=offering).first()
     if existing and existing.status in {Enrollment.Status.ENROLLED, Enrollment.Status.COMPLETED}:
         return Eligibility(False, "You are already enrolled in this offering.")
@@ -62,6 +63,8 @@ def eligible_offerings(student, semester=None):
 
 def enroll_student(request, student, offering_id):
     with transaction.atomic():
+        # Lock the offering row before rechecking eligibility and decrementing
+        # seats_available so concurrent requests cannot oversell capacity.
         offering = CourseOffering.objects.select_for_update().select_related("course", "semester", "faculty").get(pk=offering_id)
         state = check_eligibility(student, offering)
         if not state.eligible:
@@ -70,6 +73,8 @@ def enroll_student(request, student, offering_id):
         offering.seats_available -= 1
         offering.save(update_fields=["seats_available", "updated_at"])
         audit(request, "ENROLLMENT_CREATED", "Enrollment", enrollment.id, {"offeringId": offering.id})
+        # Dispatch the confirmation email only after commit so notification
+        # errors cannot roll back seat allocation.
         transaction.on_commit(lambda: notify(student.user, "Enrollment confirmed", f"Your enrollment in {offering.course.code} — {offering.course.title} is confirmed.", safe_metadata={"enrollmentId": enrollment.id}))
     return enrollment
 

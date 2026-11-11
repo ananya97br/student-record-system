@@ -43,6 +43,7 @@ def my_profile(request):
     data = parse_json(request) or {}
     fields = {"phone": "phone", "address": "address", "emergencyContactName": "emergency_contact_name", "emergencyContactPhone": "emergency_contact_phone"}
     created = []
+    # Requests are stored separately so submitting a change never mutates the live profile.
     with transaction.atomic():
         for incoming, field in fields.items():
             if incoming in data:
@@ -50,6 +51,7 @@ def my_profile(request):
                 if not value or len(value) > 500:
                     return error_response("INVALID_INPUT", f"{incoming} is invalid.", request.correlation_id, 400)
                 old_value = getattr(student, field)
+                # A newer request replaces any earlier pending request for the same field.
                 ProfileChangeRequest.objects.filter(student=student, field=field, status=ProfileChangeRequest.Status.PENDING).update(status=ProfileChangeRequest.Status.REJECTED, reviewer=request.user, review_reason="Superseded by a newer request", reviewed_at=timezone.now())
                 created.append(ProfileChangeRequest.objects.create(student=student, field=field, old_value=old_value, new_value=value))
     for row in created:
@@ -94,6 +96,7 @@ def change_request_decision(request, request_id):
         row.reviewed_at = timezone.now()
         row.save(update_fields=["status", "reviewer", "review_reason", "reviewed_at"])
         if row.status == ProfileChangeRequest.Status.APPROVED:
+            # Copy the proposed value to the live profile only after approval.
             setattr(row.student, row.field, row.new_value)
             row.student.save(update_fields=[row.field, "updated_at"])
     audit(request, f"PROFILE_CHANGE_{row.status}", "ProfileChangeRequest", row.id, {"field": row.field})
@@ -119,9 +122,12 @@ def student_list_or_create(request):
         return error_response("INVALID_INPUT", "email, password, firstName, lastName, and programId are required.", request.correlation_id, 400)
     if len(str(data["password"])) < 10:
         return error_response("WEAK_PASSWORD", "Password must be at least 10 characters.", request.correlation_id, 400)
+    # Create the User and Student records atomically so validation failures
+    # never leave an orphaned login account behind.
     with transaction.atomic():
         try:
             user = User.objects.create_user(login_id=data.get("loginId") or f"student-{uuid.uuid4().hex[:10]}", email=data["email"], password=data["password"], role=User.Role.STUDENT)
+            # Always assign the server-generated ID rather than trusting client input.
             student = Student.objects.create(user=user, student_id=next_student_id(), program_id=data["programId"], first_name=data["firstName"], last_name=data["lastName"], phone=data.get("phone", ""), address=data.get("address", ""), emergency_contact_name=data.get("emergencyContactName", ""), emergency_contact_phone=data.get("emergencyContactPhone", ""))
         except Exception as exc:
             return error_response("INVALID_RECORD", "Could not create student; check unique fields and program.", request.correlation_id, 400)
