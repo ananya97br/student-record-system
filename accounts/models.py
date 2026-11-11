@@ -78,6 +78,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class OtpToken(models.Model):
+    # Store only a keyed digest; the one-time code itself is delivered out of band.
     class Purpose(models.TextChoices):
         PASSWORD_RESET = "PASSWORD_RESET", "Password reset"
 
