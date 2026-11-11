@@ -20,3 +20,6 @@ infra/nginx/certs/*.pem
 dist/
 build/
 *.egg-info/
+.coverage
+htmlcov/
+coverage.xml
