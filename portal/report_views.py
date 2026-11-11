@@ -28,6 +28,8 @@ def _filters(request, qs):
 
 
 def _report_rows(kind, request):
+    # Apply semester, program, and course filters server-side per report type,
+    # restricting grade reports to finalized, locked results.
     if kind == "enrollment":
         qs = Enrollment.objects.select_related("student__program", "offering__course", "offering__semester").all()
         if request.GET.get("semester"):
@@ -74,6 +76,8 @@ def report(request, kind):
     if kind not in {"enrollment", "attendance", "fees", "grades"}:
         return error_response("NOT_FOUND", "Unknown report.", request.correlation_id, 404)
     headers, rows = _report_rows(kind, request)
+    # Only ADMIN and SYSADMIN reach this view; exports are rate-limited per
+    # user and audited along with the applied query filters.
     if request.GET.get("format"):
         key = f"srs-rate:export:{request.user.pk}"
         count = cache.get(key, 0)
@@ -82,6 +86,8 @@ def report(request, kind):
         cache.set(key, count + 1, 60)
     audit(request, "REPORT_EXPORT" if request.GET.get("format") else "REPORT_VIEW", "Report", kind, {"filters": {key: request.GET.get(key) for key in ["semester", "program", "course"] if request.GET.get(key)}})
     export_format = request.GET.get("format")
+    # Bound exported row counts so large queries cannot exhaust memory during
+    # XLSX or PDF rendering.
     if export_format == "xlsx":
         return xlsx_response(f"{kind}-report.xlsx", headers, rows[:10000])
     if export_format == "pdf":
