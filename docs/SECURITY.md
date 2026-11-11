@@ -14,6 +14,29 @@
 - Correlation IDs are returned and included in safe operational logs. Secrets, passwords, OTPs, tokens, card data, encryption keys, and document bytes are not logged.
 - Audit logs reject ORM updates/deletes and MySQL migrations add database triggers. No application service offers audit mutation.
 
+## Security alerts and report-export monitoring
+
+The application records audit events and creates security alerts for denied
+authorization attempts. Five failed login attempts lock the account, record an
+`ACCOUNT_LOCK` audit event, create a high-severity `REPEATED_LOGIN_FAILURE`
+alert, and send a notification. Report exports are audited; at least five
+exports by the same actor within five minutes create a high-severity
+`BULK_EXPORT` alert. An unresolved bulk-export alert is reused rather than
+creating another alert for every subsequent export.
+
+Administrators and system administrators can review alerts through
+`GET /api/auth/security-alerts` and resolve them through
+`POST /api/auth/security-alerts/<id>/resolve`. Review the actor, alert type,
+time, related audit events, request context, and expected business activity
+before resolving. Investigate unexpected exports or access denials promptly,
+preserve the relevant audit evidence, and follow the organization's incident
+response process.
+
+These are application-level records and an API review surface, not a configured
+centralized paging or SIEM integration. Production operators must arrange
+alert review, escalation ownership, and log retention/forwarding separately;
+do not treat the presence of alert records as proof of continuous monitoring.
+
 ## Threat boundaries
 
 The local console email backend, deterministic scanner, SQLite fallback, and self-signed certificate are development conveniences. Production must use a managed secret store, real SMTP/provider adapters, ClamAV or equivalent, MySQL backups, HTTPS certificates trusted by clients, a shared cache/rate limiter, shared encrypted document storage, and monitoring.
