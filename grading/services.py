@@ -47,8 +47,13 @@ def finalize(request, offering):
 
     with transaction.atomic():
         for enrollment in Enrollment.objects.select_related("student").filter(offering=offering, status=Enrollment.Status.ENROLLED):
+            result = CourseResult.objects.select_for_update().filter(student=enrollment.student, offering=offering).first()
+            if result and result.is_locked:
+                continue
             score, band = calculate_score(enrollment.student, offering)
             result, _ = CourseResult.objects.select_for_update().get_or_create(student=enrollment.student, offering=offering)
+            if result.is_locked:
+                continue
             result.final_score = score
             result.letter_grade = band.letter
             result.grade_point = band.grade_point

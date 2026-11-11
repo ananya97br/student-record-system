@@ -27,6 +27,13 @@ environment.
 | TC-Att-01 | `test_TC_Att_01_assigned_faculty_and_48_hour_rule` | `tests/test_requirements.py` |
 | TC-Att-02 | `test_TC_Att_02_percentage_and_below_threshold_flag` | `tests/test_requirements.py` |
 | TC-Grd-01 | `test_TC_Grd_01_grade_lock_and_admin_override_audit` | `tests/test_requirements.py` |
+| TC-Grd-01a | `test_TC_Grd_01a_finalize_offering_locks_enrolled_results` | `tests/test_requirements.py` |
+| TC-Grd-01b | `test_TC_Grd_01b_locked_grade_rejects_faculty_edit` | `tests/test_requirements.py` |
+| TC-Grd-01c | `test_TC_Grd_01c_override_requires_reason` | `tests/test_requirements.py` |
+| TC-Grd-01d | `test_TC_Grd_01d_re_finalization_preserves_admin_override` | `tests/test_requirements.py` |
+| TC-Grd-01e | `test_TC_Grd_01e_override_rolls_back_if_audit_fails` | `tests/test_requirements.py` |
+| TC-Grd-01f | `test_TC_Grd_01f_student_cannot_override_grade` | `tests/test_requirements.py` |
+| TC-Grd-01g | `test_TC_Grd_01g_django_admin_cannot_edit_course_results` | `tests/test_requirements.py` |
 | TC-Grd-02 | `test_TC_Grd_02_known_dataset_gpa` | `tests/test_requirements.py` |
 | TC-Grd-03 | `test_TC_Grd_03_transcript_pdf_and_verification` | `tests/test_requirements.py` |
 | TC-Fee-01 | `test_TC_Fee_01_configured_formula` | `tests/test_requirements.py` |
@@ -74,7 +81,7 @@ The current P-005 documentation snapshot is in
 | F-009 / TC-Enr-03 | Drop releases exactly one seat and is audited; post-deadline and repeat drops are rejected without releasing another seat | Deadline boundary reviewed by automated API tests; no separate browser check |
 | F-010 / TC-Att-01 | Faculty assignment access | Bulk session UI/API |
 | F-011 / TC-Att-02 | 50% seeded flag and summary | XLSX flagged export |
-| F-012 / TC-Grd-01 | Locked result/admin override audit | Faculty gradebook flow |
+| F-012 / TC-Grd-01 | Finalization lock, faculty-edit rejection, reason-required privileged override, audit details, and override persistence on re-finalization | Faculty gradebook flow |
 | F-013 / TC-Grd-02 | Seeded 8.50 CGPA | Admin band configuration |
 | F-014 / TC-Grd-03 | PDF and verification endpoint | Transcript visual review |
 | F-015 / TC-Fee-01 | Configured invoice formula | Invoice UI |
@@ -104,5 +111,5 @@ in [NF-005.md](evidence/NF-005.md).
 F-007 eligible-offering test results and prerequisite-check limitations are
 recorded in [F-007.md](evidence/F-007.md).
 
-F-009 course-drop and seat-release evidence is recorded in
-[F-009.md](evidence/F-009.md).
+F-012 grade-lock and audited-override evidence is recorded in
+[F-012.md](evidence/F-012.md).

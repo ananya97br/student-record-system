@@ -5,6 +5,7 @@ import hmac
 from decimal import Decimal, InvalidOperation
 from io import BytesIO
 
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -123,32 +124,33 @@ def results(request):
 def override_result(request, result_id):
     if request.method != "POST":
         return error_response("METHOD_NOT_ALLOWED", "POST is required.", request.correlation_id, 405)
-    result = CourseResult.objects.select_related("student", "offering__course").filter(pk=result_id).first()
-    if not result:
-        return error_response("NOT_FOUND", "Course result not found.", request.correlation_id, 404)
     data = parse_json(request) or {}
     reason = str(data.get("reason", "")).strip()
     if not reason:
         return error_response("REASON_REQUIRED", "An override reason is mandatory.", request.correlation_id, 400)
-    try:
-        if "finalScore" in data:
-            score = Decimal(str(data["finalScore"]))
-            if score < 0 or score > 100:
-                raise ValueError
-            result.final_score = score
-        if "letterGrade" in data:
-            result.letter_grade = str(data["letterGrade"])[:5]
-        if "gradePoint" in data:
-            result.grade_point = Decimal(str(data["gradePoint"]))
-    except (InvalidOperation, ValueError):
-        return error_response("INVALID_INPUT", "Override grade values are invalid.", request.correlation_id, 400)
-    result.is_locked = True
-    result.locked_by = request.user
-    result.overridden_by = request.user
-    result.override_reason = reason[:500]
-    result.finalized_at = timezone.now()
-    result.save()
-    audit(request, "GRADE_ADMIN_OVERRIDE", "CourseResult", result.id, {"reason": reason[:200]})
+    with transaction.atomic():
+        result = CourseResult.objects.select_for_update().select_related("student", "offering__course").filter(pk=result_id).first()
+        if not result:
+            return error_response("NOT_FOUND", "Course result not found.", request.correlation_id, 404)
+        try:
+            if "finalScore" in data:
+                score = Decimal(str(data["finalScore"]))
+                if score < 0 or score > 100:
+                    raise ValueError
+                result.final_score = score
+            if "letterGrade" in data:
+                result.letter_grade = str(data["letterGrade"])[:5]
+            if "gradePoint" in data:
+                result.grade_point = Decimal(str(data["gradePoint"]))
+        except (InvalidOperation, ValueError):
+            return error_response("INVALID_INPUT", "Override grade values are invalid.", request.correlation_id, 400)
+        result.is_locked = True
+        result.locked_by = request.user
+        result.overridden_by = request.user
+        result.override_reason = reason[:500]
+        result.finalized_at = timezone.now()
+        result.save()
+        audit(request, "GRADE_ADMIN_OVERRIDE", "CourseResult", result.id, {"reason": reason[:200]})
     return JsonResponse({"id": result.id, "locked": True, "override": True})
 
 

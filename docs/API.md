@@ -35,7 +35,12 @@ Login returns a signed JWT in the `srs_access` HttpOnly cookie. Browser state-ch
 - Assessment components and marks under `/api/grades/components`
 - `POST /api/grades/offerings/<id>/finalize`
 - `GET /api/grades/results`, `/gpa`, `/transcript`, `/transcript/verify/<code>`
-- `POST /api/grades/results/<id>/override`
+- `POST /api/grades/results/<id>/override` (admin/sysadmin only; requires a reason and records an audit event)
+
+Finalized results cannot be changed through faculty mark entry, re-finalization,
+or Django admin editing. An authorized override retains the lock and records
+the actor and reason; the grade update and its audit event are committed
+together.
 
 ## Fees and reports
 
