@@ -47,6 +47,7 @@ class Student(models.Model):
 
 
 class ProfileChangeRequest(models.Model):
+    # Keep proposed values separate from the live profile until an administrator reviews them.
     class Status(models.TextChoices):
         PENDING = "PENDING", "Pending"
         APPROVED = "APPROVED", "Approved"

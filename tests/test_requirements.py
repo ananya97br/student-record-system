@@ -113,6 +113,7 @@ class DemoRequirementTests(TestCase):
         response = self.client.patch("/api/students/me", data=json.dumps({"phone": "+91-9999999999"}), content_type="application/json", HTTP_X_CSRFTOKEN=self.csrf)
         self.assertEqual(response.status_code, 202)
         student = Student.objects.get(student_id="STU-2026-0001")
+        # A submitted value stays out of the live profile until the admin approves it.
         self.assertNotEqual(student.phone, "+91-9999999999")
         self.login("admin.demo", "AdminDemo!2026")
         pending = self.client.get("/api/students/change-requests").json()["items"]
