@@ -67,7 +67,7 @@ The current P-005 documentation snapshot is in
 | F-004 / TC-Reg-01 | Admin create and generated ID | Student administration page |
 | F-005 / TC-Reg-02 | Pending profile then approval | Admin approval UI |
 | F-006 / TC-Reg-03 | Clean/infected/ownership document checks | Browser upload flow |
-| F-007 / TC-Enr-01 | Current semester/eligibility response | Catalog UI |
+| F-007 / TC-Enr-01 | Eligible-list response contains only the seeded current semester and at least one eligible offering | Verify prerequisite-complete and prerequisite-missing cases, and review ineligible reasons in the catalog UI |
 | F-008 / TC-Enr-02 | Duplicate/full seat checks and transactional service | MySQL concurrency profile |
 | F-009 / TC-Enr-03 | Drop releases seat | Deadline error path |
 | F-010 / TC-Att-01 | Faculty assignment access | Bulk session UI/API |
@@ -98,3 +98,6 @@ P-008 local validation evidence and its environment limitations are recorded in
 
 NF-005 test results and the remaining accessibility review items are recorded
 in [NF-005.md](evidence/NF-005.md).
+
+F-007 eligible-offering test results and prerequisite-check limitations are
+recorded in [F-007.md](evidence/F-007.md).
