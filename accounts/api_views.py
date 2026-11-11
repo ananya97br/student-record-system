@@ -61,6 +61,8 @@ def login(request):
     if user.status == User.Status.DISABLED or not user.is_active:
         return error_response("ACCOUNT_DISABLED", "This account is disabled.", request.correlation_id, 403)
     if not user.check_password(str(data["password"])):
+        # Lock the user row before counting failures so concurrent bad logins
+        # cannot bypass the five-attempt lockout threshold.
         with transaction.atomic():
             locked = User.objects.select_for_update().get(pk=user.pk)
             locked.failed_login_attempts += 1
@@ -70,6 +72,8 @@ def login(request):
                 locked.locked_at = timezone.now()
             locked.save(update_fields=["failed_login_attempts", "status", "locked_at", "updated_at"])
         if should_lock:
+            # Record audit, security alert, and lock notification after the
+            # lockout state commits so delivery issues cannot undo the lock.
             audit(request, "ACCOUNT_LOCK", "User", user.pk, {"reason": "failed_login_threshold"})
             SecurityAlert.objects.create(alert_type="REPEATED_LOGIN_FAILURE", severity="HIGH", user=user, message="Account locked after repeated failed login attempts.", metadata={"threshold": settings.ACCOUNT_LOCK_FAILED_ATTEMPTS})
             notify(user, "Student Record System account locked", "Your account was locked after repeated unsuccessful sign-in attempts. Contact an administrator to unlock it.", safe_metadata={"reason": "failed_login_threshold"})
@@ -189,6 +193,8 @@ def unlock_user(request, user_id):
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
         return error_response("NOT_FOUND", "User not found.", request.correlation_id, 404)
+    # Administrative unlock restores access and resets failed attempts so the
+    # account does not immediately re-lock on the next login.
     user.status = User.Status.ACTIVE
     user.failed_login_attempts = 0
     user.locked_at = None
