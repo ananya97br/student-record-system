@@ -35,3 +35,6 @@ The main automated suite is `tests/test_requirements.py`, run with `python manag
 | SR-005 / TC-Sec-06 | Authenticated ciphertext/tamper test | Key rotation runbook |
 
 Regression coverage includes duplicate enrollment, full-seat behavior, duplicate payment callbacks, ownership checks, report authorization, transcript generation/verification, document ownership, and audited grade overrides.
+
+P-008 local validation evidence and its environment limitations are recorded in
+[P-008.md](evidence/P-008.md).
