@@ -43,6 +43,7 @@ def my_profile(request):
     data = parse_json(request) or {}
     fields = {"phone": "phone", "address": "address", "emergencyContactName": "emergency_contact_name", "emergencyContactPhone": "emergency_contact_phone"}
     created = []
+    # Requests are stored separately so submitting a change never mutates the live profile.
     with transaction.atomic():
         for incoming, field in fields.items():
             if incoming in data:
@@ -50,6 +51,7 @@ def my_profile(request):
                 if not value or len(value) > 500:
                     return error_response("INVALID_INPUT", f"{incoming} is invalid.", request.correlation_id, 400)
                 old_value = getattr(student, field)
+                # A newer request replaces any earlier pending request for the same field.
                 ProfileChangeRequest.objects.filter(student=student, field=field, status=ProfileChangeRequest.Status.PENDING).update(status=ProfileChangeRequest.Status.REJECTED, reviewer=request.user, review_reason="Superseded by a newer request", reviewed_at=timezone.now())
                 created.append(ProfileChangeRequest.objects.create(student=student, field=field, old_value=old_value, new_value=value))
     for row in created:
@@ -94,6 +96,7 @@ def change_request_decision(request, request_id):
         row.reviewed_at = timezone.now()
         row.save(update_fields=["status", "reviewer", "review_reason", "reviewed_at"])
         if row.status == ProfileChangeRequest.Status.APPROVED:
+            # Copy the proposed value to the live profile only after approval.
             setattr(row.student, row.field, row.new_value)
             row.student.save(update_fields=[row.field, "updated_at"])
     audit(request, f"PROFILE_CHANGE_{row.status}", "ProfileChangeRequest", row.id, {"field": row.field})
