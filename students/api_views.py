@@ -122,9 +122,12 @@ def student_list_or_create(request):
         return error_response("INVALID_INPUT", "email, password, firstName, lastName, and programId are required.", request.correlation_id, 400)
     if len(str(data["password"])) < 10:
         return error_response("WEAK_PASSWORD", "Password must be at least 10 characters.", request.correlation_id, 400)
+    # Create the User and Student records atomically so validation failures
+    # never leave an orphaned login account behind.
     with transaction.atomic():
         try:
             user = User.objects.create_user(login_id=data.get("loginId") or f"student-{uuid.uuid4().hex[:10]}", email=data["email"], password=data["password"], role=User.Role.STUDENT)
+            # Always assign the server-generated ID rather than trusting client input.
             student = Student.objects.create(user=user, student_id=next_student_id(), program_id=data["programId"], first_name=data["firstName"], last_name=data["lastName"], phone=data.get("phone", ""), address=data.get("address", ""), emergency_contact_name=data.get("emergencyContactName", ""), emergency_contact_phone=data.get("emergencyContactPhone", ""))
         except Exception as exc:
             return error_response("INVALID_RECORD", "Could not create student; check unique fields and program.", request.correlation_id, 400)
