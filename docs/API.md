@@ -30,7 +30,7 @@ Login returns a signed JWT in the `srs_access` HttpOnly cookie. Browser state-ch
 
 ## Enrollment, attendance, grades
 
-- `GET /api/enrollments/eligible`, `GET/POST /api/enrollments`, `POST /api/enrollments/<id>/drop`
+- `GET /api/enrollments/eligible`, `GET/POST /api/enrollments`, `POST /api/enrollments/<id>/drop` (student-owned active enrollments only; drops are allowed through the add/drop deadline and release one seat)
 - `GET /api/attendance/faculty-offerings`, roster/session/bulk-record endpoints, student summary, flagged export
 - Assessment components and marks under `/api/grades/components`
 - `POST /api/grades/offerings/<id>/finalize`
