@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import timedelta
 from pathlib import Path
 import re
 from decimal import Decimal
@@ -154,12 +155,50 @@ class DemoRequirementTests(TestCase):
     def test_TC_Enr_03_drop_before_deadline_releases_seat(self):
         self.login()
         enrollment = Enrollment.objects.filter(student__student_id="STU-2026-0001", offering__course__code="CS201").first()
+        enrollment.offering.refresh_from_db()
+        seats_before = enrollment.offering.seats_available
         response = self.post(f"/api/enrollments/{enrollment.id}/drop", {})
         self.assertEqual(response.status_code, 200)
         enrollment.refresh_from_db()
         enrollment.offering.refresh_from_db()
         self.assertEqual(enrollment.status, Enrollment.Status.DROPPED)
+        self.assertEqual(enrollment.offering.seats_available, seats_before + 1)
         self.assertEqual(enrollment.offering.seats_available, enrollment.offering.capacity - Enrollment.objects.filter(offering=enrollment.offering, status=Enrollment.Status.ENROLLED).count())
+        self.assertTrue(AuditLog.objects.filter(action="ENROLLMENT_DROPPED", entity_id=str(enrollment.id)).exists())
+
+    def test_TC_Enr_03a_drop_after_deadline_does_not_release_seat(self):
+        self.login()
+        enrollment = Enrollment.objects.filter(student__student_id="STU-2026-0001", offering__course__code="CS201").first()
+        enrollment.offering.refresh_from_db()
+        seats_before = enrollment.offering.seats_available
+        after_deadline = enrollment.offering.semester.add_drop_deadline + timedelta(seconds=1)
+
+        with patch("enrollments.services.timezone.now", return_value=after_deadline):
+            response = self.post(f"/api/enrollments/{enrollment.id}/drop", {})
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["code"], "DROP_NOT_ALLOWED")
+        enrollment.refresh_from_db()
+        enrollment.offering.refresh_from_db()
+        self.assertEqual(enrollment.status, Enrollment.Status.ENROLLED)
+        self.assertEqual(enrollment.offering.seats_available, seats_before)
+        self.assertFalse(AuditLog.objects.filter(action="ENROLLMENT_DROPPED", entity_id=str(enrollment.id)).exists())
+
+    def test_TC_Enr_03b_repeated_drop_does_not_release_another_seat(self):
+        self.login()
+        enrollment = Enrollment.objects.filter(student__student_id="STU-2026-0001", offering__course__code="CS201").first()
+        response = self.post(f"/api/enrollments/{enrollment.id}/drop", {})
+        self.assertEqual(response.status_code, 200, response.content)
+        enrollment.offering.refresh_from_db()
+        seats_after_drop = enrollment.offering.seats_available
+
+        response = self.post(f"/api/enrollments/{enrollment.id}/drop", {})
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["code"], "DROP_NOT_ALLOWED")
+        enrollment.offering.refresh_from_db()
+        self.assertEqual(enrollment.offering.seats_available, seats_after_drop)
+        self.assertEqual(AuditLog.objects.filter(action="ENROLLMENT_DROPPED", entity_id=str(enrollment.id)).count(), 1)
 
     def test_TC_Att_01_assigned_faculty_and_48_hour_rule(self):
         self.login("faculty2.demo", "Faculty2Demo!2026")

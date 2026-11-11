@@ -22,6 +22,8 @@ environment.
 | TC-Enr-01 | `test_TC_Enr_01_only_current_eligible_offerings` | `tests/test_requirements.py` |
 | TC-Enr-02 | `test_TC_Enr_02_duplicate_and_full_seat_checks` | `tests/test_requirements.py` |
 | TC-Enr-03 | `test_TC_Enr_03_drop_before_deadline_releases_seat` | `tests/test_requirements.py` |
+| TC-Enr-03a | `test_TC_Enr_03a_drop_after_deadline_does_not_release_seat` | `tests/test_requirements.py` |
+| TC-Enr-03b | `test_TC_Enr_03b_repeated_drop_does_not_release_another_seat` | `tests/test_requirements.py` |
 | TC-Att-01 | `test_TC_Att_01_assigned_faculty_and_48_hour_rule` | `tests/test_requirements.py` |
 | TC-Att-02 | `test_TC_Att_02_percentage_and_below_threshold_flag` | `tests/test_requirements.py` |
 | TC-Grd-01 | `test_TC_Grd_01_grade_lock_and_admin_override_audit` | `tests/test_requirements.py` |
@@ -69,7 +71,7 @@ The current P-005 documentation snapshot is in
 | F-006 / TC-Reg-03 | Clean/infected/ownership document checks | Browser upload flow |
 | F-007 / TC-Enr-01 | Eligible-list response contains only the seeded current semester and at least one eligible offering | Verify prerequisite-complete and prerequisite-missing cases, and review ineligible reasons in the catalog UI |
 | F-008 / TC-Enr-02 | Duplicate/full seat checks and transactional service | MySQL concurrency profile |
-| F-009 / TC-Enr-03 | Drop releases seat | Deadline error path |
+| F-009 / TC-Enr-03 | Drop releases exactly one seat and is audited; post-deadline and repeat drops are rejected without releasing another seat | Deadline boundary reviewed by automated API tests; no separate browser check |
 | F-010 / TC-Att-01 | Faculty assignment access | Bulk session UI/API |
 | F-011 / TC-Att-02 | 50% seeded flag and summary | XLSX flagged export |
 | F-012 / TC-Grd-01 | Locked result/admin override audit | Faculty gradebook flow |
@@ -101,3 +103,6 @@ in [NF-005.md](evidence/NF-005.md).
 
 F-007 eligible-offering test results and prerequisite-check limitations are
 recorded in [F-007.md](evidence/F-007.md).
+
+F-009 course-drop and seat-release evidence is recorded in
+[F-009.md](evidence/F-009.md).
