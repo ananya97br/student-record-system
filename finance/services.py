@@ -31,6 +31,8 @@ class MockPaymentGateway:
 
 
 def fee_structure_for(student, semester):
+    # Prefer the latest active semester-specific fee structure and fall back
+    # to the latest program-wide default when none is defined.
     return FeeStructure.objects.filter(program=student.program, active=True).filter(semester=semester).order_by("-version").first() or FeeStructure.objects.filter(program=student.program, active=True, semester__isnull=True).order_by("-version").first()
 
 
@@ -41,6 +43,8 @@ def best_scholarship(student, semester, subtotal):
     for scholarship in candidates.distinct():
         discount = subtotal * (scholarship.percentage / Decimal("100")) if scholarship.percentage is not None else (scholarship.amount or Decimal("0"))
         best = max(best, discount)
+    # Scholarships do not stack; select the single largest eligible discount
+    # and cap it at the subtotal so invoices never become negative.
     return min(best.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP), subtotal)
 
 
@@ -53,6 +57,8 @@ def generate_invoice(student, semester):
     fee = fee_structure_for(student, semester)
     if not fee:
         raise ValueError("No fee structure is configured for this program and semester")
+    # Bill only active ENROLLED credits using the configured formula:
+    # total = base_fee + (per_credit_fee * credits) - best_scholarship.
     credits = sum(enrollment.offering.course.credits for enrollment in Enrollment.objects.select_related("offering__course").filter(student=student, offering__semester=semester, status=Enrollment.Status.ENROLLED))
     base = fee.base_fee
     credit_fee = fee.per_credit_fee * credits

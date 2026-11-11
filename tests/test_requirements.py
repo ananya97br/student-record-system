@@ -98,6 +98,7 @@ class DemoRequirementTests(TestCase):
         otp = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
         response = self.client.post("/api/auth/reset-password", data=json.dumps({"email": "student1.demo@student-record.local", "otp": otp, "newPassword": "NewStudentPassword!2026"}), content_type="application/json")
         self.assertEqual(response.status_code, 200)
+        # The consumed code must not authorize a second password change.
         response = self.client.post("/api/auth/reset-password", data=json.dumps({"email": "student1.demo@student-record.local", "otp": otp, "newPassword": "AnotherPassword!2026"}), content_type="application/json")
         self.assertEqual(response.status_code, 400)
         self.assertTrue(User.objects.get(login_id="student1.demo").check_password("NewStudentPassword!2026"))
@@ -114,6 +115,7 @@ class DemoRequirementTests(TestCase):
         response = self.client.patch("/api/students/me", data=json.dumps({"phone": "+91-9999999999"}), content_type="application/json", HTTP_X_CSRFTOKEN=self.csrf)
         self.assertEqual(response.status_code, 202)
         student = Student.objects.get(student_id="STU-2026-0001")
+        # A submitted value stays out of the live profile until the admin approves it.
         self.assertNotEqual(student.phone, "+91-9999999999")
         self.login("admin.demo", "AdminDemo!2026")
         pending = self.client.get("/api/students/change-requests").json()["items"]
