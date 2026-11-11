@@ -87,6 +87,7 @@ def initiate_payment(request, invoice, idempotency_key):
 
 def process_callback(request, payload: dict, signature: str):
     gateway = MockPaymentGateway()
+    # Verify the signed payload before looking up or mutating any payment.
     expected = gateway.sign(payload)
     if not signature or not hmac.compare_digest(signature, expected):
         return None, "BAD_SIGNATURE"
@@ -103,6 +104,8 @@ def process_callback(request, payload: dict, signature: str):
     if payment.gateway_order_reference != str(payload["gatewayOrderReference"]) or payment.currency != str(payload["currency"]) or amount != payment.amount:
         return None, "REFERENCE_OR_AMOUNT_MISMATCH"
     with transaction.atomic():
+        # Lock the payment and invoice together so retries cannot create a
+        # second receipt or apply the same balance change twice.
         payment = Payment.objects.select_for_update().select_related("invoice__student__user").get(pk=payment.pk)
         if payment.status in {Payment.Status.SUCCESS, Payment.Status.FAILED, Payment.Status.CANCELLED}:
             return payment, "ALREADY_PROCESSED"
