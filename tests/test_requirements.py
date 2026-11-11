@@ -46,6 +46,7 @@ class DemoRequirementTests(TestCase):
         return self.client.post(path, data=json.dumps(payload), content_type="application/json", HTTP_X_CSRFTOKEN=self.csrf, **extra)
 
     def test_TC_Auth_01_successful_login_and_role_access(self):
+        # Verify login, identity lookup, and a role-protected report endpoint as a student.
         self.login()
         self.assertEqual(self.client.get("/api/auth/me").status_code, 200)
         self.assertEqual(self.client.get("/api/reports/enrollment").status_code, 403)

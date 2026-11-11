@@ -36,7 +36,9 @@ class JwtCookieMiddleware:
                 payload = decode_token(token)
                 from accounts.models import User
 
+                # Resolve identity and active status from the database on each request.
                 user = User.objects.get(pk=payload["sub"], status=User.Status.ACTIVE)
+                # A changed token version invalidates cookies from earlier sessions.
                 if user.token_version == payload.get("ver"):
                     request.user = user
             except Exception:
