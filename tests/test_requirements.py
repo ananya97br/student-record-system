@@ -416,11 +416,13 @@ class DemoRequirementTests(TestCase):
             Student.objects.get(pk=student.pk).phone
 
     def test_TC_Sec_01_password_plaintext_prohibition(self):
+        # Confirm persisted credentials use Argon2 rather than reversible or plaintext formats.
         user = User.objects.get(login_id="student1.demo")
         self.assertNotIn("Student1Demo!2026", user.password)
         self.assertTrue(user.password.startswith("argon2"))
 
     def test_TC_Sec_03_argon2_hash_and_safe_auth_values(self):
+        # Verify password hashes and ensure authentication secrets are excluded from audit metadata.
         user = User.objects.get(login_id="admin.demo")
         self.assertTrue(user.password.startswith("argon2"))
         self.assertFalse(any("AdminDemo!2026" in json.dumps(row.metadata) for row in AuditLog.objects.all()))
