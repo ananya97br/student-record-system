@@ -155,6 +155,8 @@ def _allowed_file(filename, content_type, content):
 @api_view()
 @login_required
 def my_documents(request):
+    # The document collection is always resolved through the authenticated
+    # student's profile, so another student cannot enumerate this relation.
     student = Student.objects.filter(user=request.user).first()
     if not student:
         return error_response("NOT_FOUND", "Student profile not found.", request.correlation_id, 404)
@@ -192,6 +194,8 @@ def download_document(request, document_id):
     document = StudentDocument.objects.select_related("student").filter(pk=document_id, scan_status=StudentDocument.ScanStatus.CLEAN).first()
     if not document:
         return error_response("NOT_FOUND", "Document not found.", request.correlation_id, 404)
+    # Owners and administrators may download; every other cross-role request
+    # is audited and denied before the filesystem path is opened.
     is_owner = document.student.user_id == request.user.pk
     if not is_owner and request.user.role not in {User.Role.ADMIN, User.Role.SYSADMIN}:
         audit(request, "AUTHORIZATION_DENIED", "StudentDocument", document.id)
