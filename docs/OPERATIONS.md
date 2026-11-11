@@ -30,6 +30,21 @@ Docker runs migrations in the API entrypoint before Gunicorn. Use one migration 
 - Track request latency/p95, error rate, DB health, authentication failures, payment/notification/report failures, export alerts, disk/document storage, and backup age.
 - Use structured log aggregation and redact secrets before shipping logs.
 
+### Security-alert review
+
+Administrators and system administrators should periodically review
+`GET /api/auth/security-alerts` alongside the audit list at
+`GET /api/reports/audit/list`. Prioritize high-severity account-lock and
+repeated-export alerts; correlate report-export events by actor and time, and
+check whether the activity matches an authorized operational task. Document
+the review outcome using the organization's incident process. Resolve an alert
+only after review with
+`POST /api/auth/security-alerts/<id>/resolve`.
+
+The application exposes alert records but does not itself configure an on-call
+rotation, SIEM, email/paging escalation, or continuous review schedule. Set
+those up for production and define who investigates and retains the evidence.
+
 ## Scaling
 
 Run multiple API/Web replicas behind Nginx or a managed load balancer, use MySQL connection pooling/read replicas where appropriate, a shared cache for rate limits, and shared object storage for documents. Use the k6 profiles as workload definitions; record actual environment and results rather than claiming targets by existence of the scripts.
