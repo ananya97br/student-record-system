@@ -184,7 +184,123 @@ class DemoRequirementTests(TestCase):
         self.assertEqual(response.status_code, 200)
         result.refresh_from_db()
         self.assertEqual(result.letter_grade, "A+")
-        self.assertTrue(AuditLog.objects.filter(action="GRADE_ADMIN_OVERRIDE", entity_id=str(result.id)).exists())
+        self.assertTrue(result.is_locked)
+        self.assertEqual(result.override_reason, "Correction approved")
+        self.assertEqual(result.overridden_by, User.objects.get(login_id="admin.demo"))
+        audit_row = AuditLog.objects.get(action="GRADE_ADMIN_OVERRIDE", entity_id=str(result.id))
+        self.assertEqual(audit_row.actor, result.overridden_by)
+        self.assertEqual(audit_row.metadata["reason"], "Correction approved")
+
+    def test_TC_Grd_01a_finalize_offering_locks_enrolled_results(self):
+        from grading.models import AssessmentComponent, GradeRecord
+
+        offering = CourseOffering.objects.get(course__code="CS201", semester__code="2026-FALL")
+        faculty_user = offering.faculty.user
+        enrollments = list(Enrollment.objects.filter(offering=offering, status=Enrollment.Status.ENROLLED))
+        CourseResult.objects.filter(offering=offering).update(is_locked=False)
+        component = AssessmentComponent.objects.create(
+            offering=offering, name="F-012 finalization check", component_type="OTHER",
+            max_marks=Decimal("100"), weight=Decimal("100"),
+        )
+        for enrollment in enrollments:
+            GradeRecord.objects.create(
+                component=component, student=enrollment.student,
+                mark=Decimal("75"), entered_by=faculty_user,
+            )
+
+        faculty_password = {
+            "faculty1.demo": "Faculty1Demo!2026",
+            "faculty2.demo": "Faculty2Demo!2026",
+            "faculty3.demo": "Faculty3Demo!2026",
+        }[faculty_user.login_id]
+        self.login(faculty_user.login_id, faculty_password)
+        response = self.post(f"/api/grades/offerings/{offering.id}/finalize", {})
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["locked"], len(enrollments))
+        for enrollment in enrollments:
+            result = CourseResult.objects.get(student=enrollment.student, offering=offering)
+            self.assertTrue(result.is_locked)
+            self.assertEqual(result.final_score, Decimal("75.00"))
+            self.assertEqual(result.locked_by, faculty_user)
+            self.assertIsNotNone(result.finalized_at)
+            self.assertTrue(
+                AuditLog.objects.filter(
+                    action="GRADE_LOCKED", entity_id=str(result.id), actor=faculty_user,
+                ).exists()
+            )
+
+    def test_TC_Grd_01f_student_cannot_override_grade(self):
+        result = CourseResult.objects.filter(student__student_id="STU-2026-0001").first()
+        original_score = result.final_score
+        original_letter = result.letter_grade
+        self.login("student1.demo", "Student1Demo!2026")
+        response = self.post(
+            f"/api/grades/results/{result.id}/override",
+            {"reason": "Unauthorized attempt", "finalScore": "91", "letterGrade": "A+", "gradePoint": "10"},
+        )
+        self.assertEqual(response.status_code, 403, response.content)
+        result.refresh_from_db()
+        self.assertEqual(result.final_score, original_score)
+        self.assertEqual(result.letter_grade, original_letter)
+        self.assertFalse(AuditLog.objects.filter(action="GRADE_ADMIN_OVERRIDE", entity_id=str(result.id)).exists())
+
+    def test_TC_Grd_01g_django_admin_cannot_edit_course_results(self):
+        from django.contrib import admin
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/admin/grading/courseresult/")
+        request.user = User.objects.get(login_id="admin.demo")
+        request.user.is_superuser = True
+        result_admin = admin.site._registry[CourseResult]
+        self.assertFalse(result_admin.has_add_permission(request))
+        self.assertFalse(result_admin.has_change_permission(request))
+        self.assertFalse(result_admin.has_delete_permission(request))
+        self.assertEqual(
+            set(result_admin.get_readonly_fields(request)),
+            {field.name for field in CourseResult._meta.fields},
+        )
+
+    def test_TC_Grd_01d_re_finalization_preserves_admin_override(self):
+        from types import SimpleNamespace
+
+        result = CourseResult.objects.filter(student__student_id="STU-2026-0001").first()
+        self.login("admin.demo", "AdminDemo!2026")
+        response = self.post(
+            f"/api/grades/results/{result.id}/override",
+            {"reason": "Approved correction", "finalScore": "91", "letterGrade": "A+", "gradePoint": "10"},
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+        with patch(
+            "grading.services.calculate_score",
+            return_value=(Decimal("50"), SimpleNamespace(letter="D", grade_point=Decimal("6"))),
+        ):
+            response = self.post(f"/api/grades/offerings/{result.offering_id}/finalize", {})
+
+        self.assertEqual(response.status_code, 200, response.content)
+        result.refresh_from_db()
+        self.assertEqual(result.final_score, Decimal("91"))
+        self.assertEqual(result.letter_grade, "A+")
+        self.assertEqual(result.grade_point, Decimal("10"))
+        self.assertEqual(result.override_reason, "Approved correction")
+
+    def test_TC_Grd_01e_override_rolls_back_if_audit_fails(self):
+        result = CourseResult.objects.filter(student__student_id="STU-2026-0001").first()
+        original_score = result.final_score
+        original_letter = result.letter_grade
+        self.login("admin.demo", "AdminDemo!2026")
+        with patch("grading.api_views.audit", side_effect=RuntimeError("audit storage unavailable")):
+            with self.assertRaises(RuntimeError):
+                self.post(
+                    f"/api/grades/results/{result.id}/override",
+                    {"reason": "Approved correction", "finalScore": "91", "letterGrade": "A+", "gradePoint": "10"},
+                )
+
+        result.refresh_from_db()
+        self.assertEqual(result.final_score, original_score)
+        self.assertEqual(result.letter_grade, original_letter)
+        self.assertFalse(AuditLog.objects.filter(action="GRADE_ADMIN_OVERRIDE", entity_id=str(result.id)).exists())
 
     def test_TC_Grd_02_known_dataset_gpa(self):
         self.login()
@@ -302,3 +418,40 @@ class DemoRequirementTests(TestCase):
         self.assertNotIn('data-contrast-toggle', Path("templates/login.html").read_text() + html)
         self.assertNotIn('Enable high contrast', Path("templates/login.html").read_text() + html)
         self.assertIn("scope=\"col\"", Path("static/js/app.js").read_text())
+
+    def test_TC_Grd_01b_locked_grade_rejects_faculty_edit(self):
+        from grading.models import AssessmentComponent
+
+        result = CourseResult.objects.filter(student__student_id="STU-2026-0001").first()
+        result.is_locked = True
+        result.save()
+        component = AssessmentComponent.objects.create(
+            offering=result.offering, name="F-012 lock check", component_type="OTHER",
+            max_marks=Decimal("100"), weight=Decimal("10"),
+        )
+        faculty_login = result.offering.faculty.user.login_id
+        faculty_password = {
+            "faculty1.demo": "Faculty1Demo!2026",
+            "faculty2.demo": "Faculty2Demo!2026",
+            "faculty3.demo": "Faculty3Demo!2026",
+        }[faculty_login]
+        self.login(faculty_login, faculty_password)
+        response = self.post(
+            f"/api/grades/components/{component.id}/marks",
+            {"marks": [{"studentId": result.student_id, "mark": "50"}]},
+        )
+        self.assertEqual(response.status_code, 409, response.content)
+        self.assertEqual(response.json()["code"], "GRADE_LOCKED")
+
+    def test_TC_Grd_01c_override_requires_reason(self):
+        result = CourseResult.objects.filter(student__student_id="STU-2026-0001").first()
+        original_letter = result.letter_grade
+        self.login("admin.demo", "AdminDemo!2026")
+        response = self.post(
+            f"/api/grades/results/{result.id}/override",
+            {"reason": "   ", "finalScore": "91", "letterGrade": "A+", "gradePoint": "10"},
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        result.refresh_from_db()
+        self.assertEqual(result.letter_grade, original_letter)
+        self.assertFalse(AuditLog.objects.filter(action="GRADE_ADMIN_OVERRIDE", entity_id=str(result.id)).exists())
