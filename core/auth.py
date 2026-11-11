@@ -9,6 +9,7 @@ from django.utils import timezone
 def issue_token(user) -> str:
     now = timezone.now()
     return jwt.encode(
+        # Include the role for token context and version for subsequent revocation checks.
         {"sub": str(user.pk), "role": user.role, "ver": user.token_version, "iat": now, "exp": now + timedelta(minutes=settings.JWT_TTL_MINUTES)},
         settings.JWT_SECRET_KEY,
         algorithm="HS256",

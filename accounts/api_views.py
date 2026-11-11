@@ -35,6 +35,7 @@ def _rate_limit(request, bucket: str, limit: int, window: int = 60) -> bool:
 
 
 def _auth_response(request, user, token):
+    # Return the authenticated identity and role while keeping the JWT HttpOnly.
     response = JsonResponse({"user": {"id": str(user.pk), "loginId": user.login_id, "email": user.email, "role": user.role}, "csrfToken": get_token(request)})
     response.set_cookie(settings.JWT_COOKIE_NAME, token, httponly=True, secure=settings.SECURE_COOKIES, samesite="Lax", max_age=settings.JWT_TTL_MINUTES * 60, path="/")
     return response
@@ -74,6 +75,7 @@ def login(request):
             notify(user, "Student Record System account locked", "Your account was locked after repeated unsuccessful sign-in attempts. Contact an administrator to unlock it.", safe_metadata={"reason": "failed_login_threshold"})
             return error_response("ACCOUNT_LOCKED", "This account is now locked. Contact an administrator.", request.correlation_id, 423)
         return error_response("INVALID_CREDENTIALS", "Invalid login ID or password.", request.correlation_id, 401)
+    # A successful login clears prior failures and returns the account's current role.
     user.failed_login_attempts = 0
     user.last_login_at = timezone.now()
     user.save(update_fields=["failed_login_attempts", "last_login_at", "updated_at"])
@@ -99,6 +101,7 @@ def logout(request):
 @login_required
 def me(request):
     user = request.user
+    # Build identity from the authenticated database user, not client-supplied role data.
     result = {"id": str(user.pk), "loginId": user.login_id, "email": user.email, "role": user.role, "status": user.status}
     if user.role == User.Role.STUDENT:
         from students.models import Student

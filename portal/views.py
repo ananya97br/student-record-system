@@ -29,6 +29,7 @@ def portal_page(request, section):
         return redirect("login-page")
     if section not in VALID_SECTIONS:
         section = "dashboard"
+    # Hide and deny sections according to the authenticated user's role.
     allowed_sections = ROLE_SECTIONS.get(request.user.role, frozenset({"dashboard"}))
     if section not in allowed_sections:
         audit(request, "AUTHORIZATION_DENIED", "Portal section", section, {"role": request.user.role})
