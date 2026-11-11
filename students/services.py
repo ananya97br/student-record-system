@@ -10,6 +10,8 @@ def next_student_id() -> str:
     year = timezone.now().year
     for _ in range(3):
         try:
+            # Lock the yearly counter row so concurrent registrations allocate
+            # distinct sequential STU-YYYY-NNNN student identifiers.
             with transaction.atomic():
                 sequence, created = StudentIdSequence.objects.get_or_create(year=year, defaults={"next_number": 2})
                 if not created:
