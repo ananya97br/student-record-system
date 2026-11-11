@@ -177,6 +177,8 @@ def transcript(request):
     student = _student_for_request(request)
     if not student:
         return error_response("NOT_FOUND", "Student profile not found or student parameter is required.", request.correlation_id, 404)
+    # Transcripts include finalized results only; provisional grades must not
+    # appear in an official PDF or its verification snapshot.
     results_qs = list(CourseResult.objects.select_related("offering__course", "offering__semester").filter(student=student, is_locked=True).order_by("offering__semester__start_date", "offering__course__code"))
     verification, snapshot_hash = transcript_code(student, results_qs)
     gpa_data = gpa_for(student)
@@ -201,6 +203,8 @@ def verify_transcript(request, code):
     if not verification:
         return error_response("NOT_FOUND", "Transcript verification code not found.", request.correlation_id, 404)
     results_qs = CourseResult.objects.select_related("offering__course", "offering__semester").filter(student=verification.student, is_locked=True).order_by("offering__semester__start_date", "offering__course__code")
+    # Rebuild the same snapshot at verification time and compare in constant
+    # time so the endpoint detects tampering without leaking comparison detail.
     snapshot = "|".join(f"{result.id}:{result.final_score}:{result.letter_grade}:{result.grade_point}" for result in results_qs)
     valid = hmac.compare_digest(verification.snapshot_hash, hashlib.sha256(snapshot.encode()).hexdigest())
     audit(request, "TRANSCRIPT_VERIFIED", "TranscriptVerification", verification.id)
