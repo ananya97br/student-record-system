@@ -71,9 +71,11 @@ class EncryptedTextField(models.TextField):
         if value in (None, ""):
             return ""
         text = str(value)
+        # Keep existing v1 payloads intact so repeated saves never double-encrypt ciphertext.
         return text if text.startswith("v1:") else encrypt_value(text)
 
     def from_db_value(self, value: Any, expression, connection) -> str:
+        # Every database read verifies the AES-GCM authentication tag via decrypt_value.
         return decrypt_value(value) if value else ""
 
     def to_python(self, value: Any) -> str:
@@ -93,6 +95,7 @@ class EncryptedDecimalField(EncryptedTextField):
     def from_db_value(self, value: Any, expression, connection):
         from decimal import Decimal
 
+        # Decrypt and authenticate the stored string before converting back to Decimal.
         text = super().from_db_value(value, expression, connection)
         return Decimal(text) if text else None
 
