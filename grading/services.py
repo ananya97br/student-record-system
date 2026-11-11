@@ -77,6 +77,8 @@ def gpa_for(student):
 
 
 def transcript_code(student, results):
+    # The verification hash covers the ordered result snapshot so any later
+    # grade change makes a previously issued transcript verifiably stale.
     snapshot = "|".join(f"{r.id}:{r.final_score}:{r.letter_grade}:{r.grade_point}" for r in results)
     snapshot_hash = hashlib.sha256(snapshot.encode()).hexdigest()
     verification = TranscriptVerification.objects.create(code=f"TR-{secrets.token_urlsafe(18)}", student=student, snapshot_hash=snapshot_hash)
