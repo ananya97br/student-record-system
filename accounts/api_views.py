@@ -122,6 +122,7 @@ def forgot_password(request):
     user = User.objects.filter(email__iexact=str(data["email"]).strip(), status=User.Status.ACTIVE).first()
     if user:
         now = timezone.now()
+        # Issuing a new code invalidates every earlier unused password-reset code.
         OtpToken.objects.filter(user=user, purpose=OtpToken.Purpose.PASSWORD_RESET, used_at__isnull=True).update(used_at=now)
         otp = f"{secrets.randbelow(1_000_000):06d}"
         digest = hashlib.sha256((otp + settings.SECRET_KEY).encode()).hexdigest()
@@ -155,17 +156,20 @@ def reset_password(request):
     user = User.objects.filter(email__iexact=str(data["email"]).strip(), status=User.Status.ACTIVE).first()
     if not user:
         return error_response("INVALID_OTP", "The one-time password is invalid or expired.", request.correlation_id, 400)
+    # Match only an unused code whose expiration time is still in the future.
     digest = hashlib.sha256((str(data["otp"]) + settings.SECRET_KEY).encode()).hexdigest()
     token = OtpToken.objects.filter(user=user, purpose=OtpToken.Purpose.PASSWORD_RESET, token_hash=digest, used_at__isnull=True, expires_at__gt=timezone.now()).order_by("-created_at").first()
     if not token:
         return error_response("INVALID_OTP", "The one-time password is invalid or expired.", request.correlation_id, 400)
     with transaction.atomic():
+        # Lock and recheck the code before consuming it to prevent concurrent reuse.
         token = OtpToken.objects.select_for_update().get(pk=token.pk)
         if token.used_at or token.expires_at <= timezone.now():
             return error_response("INVALID_OTP", "The one-time password is invalid or expired.", request.correlation_id, 400)
         token.used_at = timezone.now()
         token.save(update_fields=["used_at"])
         user.set_password(password)
+        # Invalidate existing signed-in sessions after changing the credential.
         user.token_version += 1
         user.failed_login_attempts = 0
         user.save(update_fields=["password", "token_version", "failed_login_attempts", "updated_at"])

@@ -97,6 +97,7 @@ class DemoRequirementTests(TestCase):
         otp = re.search(r"\b(\d{6})\b", mail.outbox[-1].body).group(1)
         response = self.client.post("/api/auth/reset-password", data=json.dumps({"email": "student1.demo@student-record.local", "otp": otp, "newPassword": "NewStudentPassword!2026"}), content_type="application/json")
         self.assertEqual(response.status_code, 200)
+        # The consumed code must not authorize a second password change.
         response = self.client.post("/api/auth/reset-password", data=json.dumps({"email": "student1.demo@student-record.local", "otp": otp, "newPassword": "AnotherPassword!2026"}), content_type="application/json")
         self.assertEqual(response.status_code, 400)
         self.assertTrue(User.objects.get(login_id="student1.demo").check_password("NewStudentPassword!2026"))
