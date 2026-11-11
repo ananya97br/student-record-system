@@ -11,3 +11,6 @@ uploads the directory as the `test-and-coverage-reports` artifact. It contains:
 The generated files are intentionally not committed because each run describes
 a particular commit. Download the artifact from the workflow run and copy the
 files here when preparing the Software Engineering mini-project deliverables.
+
+The local validation results and checks not covered by that run are summarized
+in [P-008 system validation evidence](../evidence/P-008.md).
