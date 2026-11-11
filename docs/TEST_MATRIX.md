@@ -83,7 +83,7 @@ The current P-005 documentation snapshot is in
 | NF-002 | Live/ready endpoints and Docker health | Monitoring/uptime procedure |
 | NF-003 / TC-Sec-01 | Password/encryption tests | Security checklist |
 | NF-004 / TC-Ops-01 | Configuration and backup/restore scripts | Synthetic retention review |
-| NF-005 / TC-UX-01 | Semantic HTML/focus/contrast implementation | Browser axe/manual review |
+| NF-005 / TC-UX-01, TC-UX-02 | Portal accessibility markup assertions; student/faculty/admin navigation visibility and access restrictions | Keyboard, focus, screen-reader, and contrast review; browser axe review |
 | NF-006 / TC-Perf-02 | k6 10,000-user executable profile | No unexecuted performance claim |
 | SR-001 / TC-Sec-02 | Single Nginx public entry point on port 8000; production HTTPS termination remains an infrastructure concern | Browser/ proxy review |
 | SR-002 / TC-Sec-03 | Argon2 settings and no plaintext test | Log review |
@@ -95,3 +95,6 @@ Regression coverage includes duplicate enrollment, full-seat behavior, duplicate
 
 P-008 local validation evidence and its environment limitations are recorded in
 [P-008.md](evidence/P-008.md).
+
+NF-005 test results and the remaining accessibility review items are recorded
+in [NF-005.md](evidence/NF-005.md).
