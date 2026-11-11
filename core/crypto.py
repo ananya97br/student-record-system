@@ -20,6 +20,7 @@ from django.db import models
 def _key(value: str | bytes) -> bytes:
     raw = value.encode() if isinstance(value, str) else value
     try:
+        # A configured base64 key is used directly when it represents 256 bits.
         decoded = base64.urlsafe_b64decode(raw + b"=" * (-len(raw) % 4))
         if len(decoded) == 32:
             return decoded
@@ -31,6 +32,8 @@ def _key(value: str | bytes) -> bytes:
 def encrypt_value(value: str) -> str:
     if value is None:
         return ""
+    # AES-GCM authenticates the value as well as encrypting it; the nonce is
+    # safe to store beside the ciphertext and must be unique for each write.
     nonce = os.urandom(12)
     encrypted = AESGCM(_key(settings.FIELD_ENCRYPTION_KEY)).encrypt(nonce, value.encode(), None)
     return "v1:%s:%s" % (
@@ -43,6 +46,8 @@ def decrypt_value(value: str) -> str:
     if value in (None, ""):
         return ""
     try:
+        # Authentication failure is intentionally normalized so callers never
+        # receive unauthenticated plaintext or implementation details.
         version, nonce_text, encrypted_text = value.split(":", 2)
         if version != "v1":
             raise ValueError("Unsupported ciphertext version")
@@ -54,6 +59,8 @@ def decrypt_value(value: str) -> str:
 
 
 def lookup_hash(value: str) -> str:
+    # Lookups use a separate keyed digest so searchable equality does not
+    # require exposing or decrypting the protected value.
     return hmac.new(settings.LOOKUP_HMAC_KEY.encode(), value.strip().lower().encode(), hashlib.sha256).hexdigest()
 
 

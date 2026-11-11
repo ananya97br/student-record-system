@@ -163,9 +163,12 @@ class AuditLog(models.Model):
         indexes = [models.Index(fields=["entity_type", "entity_id"]), models.Index(fields=["action", "created_at"])]
 
     def save(self, *args, **kwargs):
+        # Keep the application-layer guard in addition to the database trigger:
+        # accidental ORM mutations should fail before reaching the database.
         if self.pk and not self._state.adding:
             raise ValueError("AuditLog is append-only")
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
+        # Audit history is evidence, not disposable application data.
         raise ValueError("AuditLog is append-only")
