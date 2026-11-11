@@ -1,3 +1,4 @@
+# Security requirement: password hashes must be validated using a strong keyed algorithm.
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.test import SimpleTestCase
