@@ -88,7 +88,7 @@ The current P-005 documentation snapshot is in
 | SR-001 / TC-Sec-02 | Single Nginx public entry point on port 8000; production HTTPS termination remains an infrastructure concern | Browser/ proxy review |
 | SR-002 / TC-Sec-03 | Argon2 settings and no plaintext test | Log review |
 | SR-003 / TC-Sec-04 | Cross-role denial and audit | Ownership regression checks |
-| SR-004 / TC-Sec-05 | Lock/export alert paths | Admin alert review |
+| SR-004 / TC-Auth-02, TC-Sec-04, TC-Sec-05 | Account-lock alert, denied-access audit/alert, and repeated-export alert | Admin alert and audit review; production escalation configuration |
 | SR-005 / TC-Sec-06 | Authenticated ciphertext/tamper test | Key rotation runbook |
 
 Regression coverage includes duplicate enrollment, full-seat behavior, duplicate payment callbacks, ownership checks, report authorization, transcript generation/verification, document ownership, and audited grade overrides.
