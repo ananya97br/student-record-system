@@ -24,6 +24,7 @@ def _enrollment(row):
 @api_view(require_csrf=False)
 @login_required
 def eligible(request):
+    # The catalog is student-only and exposes the decision reason for each offering.
     if request.user.role != User.Role.STUDENT:
         return error_response("FORBIDDEN", "Only students have an eligible course list.", request.correlation_id, 403)
     student = _student(request)

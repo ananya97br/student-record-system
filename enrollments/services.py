@@ -21,12 +21,14 @@ class Eligibility:
 def prerequisite_state(student, course) -> tuple[bool, list[str]]:
     from grading.models import CourseResult
 
+    # Only locked results with a positive grade point satisfy a prerequisite.
     completed_codes = set(CourseResult.objects.filter(student=student, is_locked=True, grade_point__gt=0).values_list("offering__course__code", flat=True))
     missing = list(course.prerequisite_links.exclude(prerequisite__code__in=completed_codes).values_list("prerequisite__code", flat=True))
     return not missing, missing
 
 
 def check_eligibility(student, offering, now=None) -> Eligibility:
+    # Reuse these rules for both catalog display and enrollment-time validation.
     now = now or timezone.now()
     if offering.status != CourseOffering.Status.OPEN:
         return Eligibility(False, "Offering is not open.")
@@ -49,10 +51,12 @@ def check_eligibility(student, offering, now=None) -> Eligibility:
 
 
 def eligible_offerings(student, semester=None):
+    # Default to the current active semester while preserving explicit filters.
     semester = semester or Semester.objects.filter(is_current=True, is_active=True).first()
     if not semester:
         return []
     offerings = CourseOffering.objects.select_related("course", "semester", "faculty").prefetch_related("course__programs", "course__prerequisite_links__prerequisite").filter(semester=semester)
+    # Include ineligible offerings so the catalog can explain why enrollment is unavailable.
     return [(offering, check_eligibility(student, offering)) for offering in offerings]
 
 
