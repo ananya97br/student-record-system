@@ -61,6 +61,8 @@ def finalize(request, offering):
 
 
 def gpa_for(student):
+    # GPA/CGPA use finalized results only, preventing provisional marks from
+    # affecting an official academic standing calculation.
     results = CourseResult.objects.select_related("offering__course", "offering__semester").filter(student=student, is_locked=True)
     semesters = {}
     for result in results:
@@ -70,6 +72,7 @@ def gpa_for(student):
         bucket["points"] += credits * result.grade_point
         bucket["courses"].append(result)
     for bucket in semesters.values():
+        # Each semester is credit-weighted rather than averaged by course count.
         bucket["gpa"] = (bucket["points"] / bucket["credits"]).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if bucket["credits"] else Decimal("0")
     total_credits = sum((bucket["credits"] for bucket in semesters.values()), Decimal("0"))
     total_points = sum((bucket["points"] for bucket in semesters.values()), Decimal("0"))
@@ -77,6 +80,8 @@ def gpa_for(student):
 
 
 def transcript_code(student, results):
+    # The verification hash covers the ordered result snapshot so any later
+    # grade change makes a previously issued transcript verifiably stale.
     snapshot = "|".join(f"{r.id}:{r.final_score}:{r.letter_grade}:{r.grade_point}" for r in results)
     snapshot_hash = hashlib.sha256(snapshot.encode()).hexdigest()
     verification = TranscriptVerification.objects.create(code=f"TR-{secrets.token_urlsafe(18)}", student=student, snapshot_hash=snapshot_hash)

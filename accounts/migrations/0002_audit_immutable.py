@@ -2,7 +2,10 @@ from django.db import migrations
 
 
 def add_mysql_triggers(apps, schema_editor):
+    # Enforce append-only audit history at the database boundary as defense in
+    # depth against code paths that bypass the Django model methods.
     if schema_editor.connection.vendor == "sqlite":
+        # SQLite is used by local development and the fast test configuration.
         with schema_editor.connection.cursor() as cursor:
             cursor.execute("DROP TRIGGER IF EXISTS srs_audit_no_update")
             cursor.execute("DROP TRIGGER IF EXISTS srs_audit_no_delete")
@@ -11,6 +14,8 @@ def add_mysql_triggers(apps, schema_editor):
         return
     if schema_editor.connection.vendor != "mysql":
         return
+    # MySQL uses SIGNAL so both direct SQL and ORM writes receive the same
+    # immutable-audit guarantee.
     with schema_editor.connection.cursor() as cursor:
         cursor.execute("DROP TRIGGER IF EXISTS srs_audit_no_update")
         cursor.execute("DROP TRIGGER IF EXISTS srs_audit_no_delete")

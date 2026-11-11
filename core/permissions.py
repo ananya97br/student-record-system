@@ -35,6 +35,8 @@ def roles(*allowed):
         @wraps(view)
         @login_required
         def wrapped(request, *args, **kwargs):
+            # Role checks run after authentication and record denied access for
+            # security monitoring before returning a uniform forbidden response.
             if request.user.role not in allowed:
                 audit(request, "AUTHORIZATION_DENIED", "Endpoint", request.path, {"requiredRoles": allowed})
                 return error_response("FORBIDDEN", "You are not authorized for this action.", request.correlation_id, 403)
