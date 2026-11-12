@@ -31,6 +31,7 @@ from students.models import Student
 class DemoRequirementTests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        # Populate deterministic demo users, offerings, and baselines once per test class.
         call_command("seed_demo", verbosity=0)
 
     def setUp(self):
