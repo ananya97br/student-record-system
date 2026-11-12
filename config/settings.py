@@ -128,6 +128,7 @@ DATABASES = {"default": database_config()}
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
 
+# Enforce Argon2id as the sole password hasher so plaintext or legacy hashes are never written.
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.Argon2PasswordHasher"]
 PASSWORD_RESET_TIMEOUT = 600
 
@@ -174,6 +175,7 @@ REST_FRAMEWORK = {
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or SECRET_KEY
 JWT_COOKIE_NAME = "srs_access"
 JWT_TTL_MINUTES = 30
+# Sensitive field encryption, lookup HMAC, and signing keys are sourced from environment variables.
 FIELD_ENCRYPTION_KEY = os.getenv("FIELD_ENCRYPTION_KEY")
 LOOKUP_HMAC_KEY = os.getenv("LOOKUP_HMAC_KEY")
 PAYMENT_MOCK_HMAC_SECRET = os.getenv("PAYMENT_MOCK_HMAC_SECRET") or SECRET_KEY
