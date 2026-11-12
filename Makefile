@@ -16,6 +16,7 @@ migrate:
 seed:
 	.venv/bin/python manage.py seed_demo
 
+# P-006: Local Django unit suite; CI emits JUnit XML to docs/reports/unit-test-report.xml.
 test:
 	.venv/bin/python manage.py test tests -v 1
 

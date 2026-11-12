@@ -368,6 +368,7 @@ Refer to `docs/SECURITY.md` for further details.
 ## 12. Documentation
 
 The repository contains the following technical documentation:
+<!-- P-004: Sprint 2 demo recording archived at repository root (sedemo.mp4, added in commit 817e48f). -->
 
 | Document | Description |
 |---|---|
@@ -377,5 +378,6 @@ The repository contains the following technical documentation:
 | `docs/OPERATIONS.md` | Operational and deployment procedures |
 | `docs/TEST_MATRIX.md` | Requirements and test case traceability |
 | `docs/DECISIONS.md` | Design decisions and deviations |
+| `sedemo.mp4` | Sprint 2 working-product demonstration recording (~1m 57s) |
 
 ---

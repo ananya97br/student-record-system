@@ -2,6 +2,7 @@
 
 The GitHub Actions workflow writes generated deliverables to this directory and
 uploads the directory as the `test-and-coverage-reports` artifact. It contains:
+<!-- P-006: CI produces unit-test-report.xml via pytest --junitxml=docs/reports/unit-test-report.xml. -->
 
 - `unit-test-report.xml` — JUnit unit-test results.
 - `coverage-report.txt` and `coverage.xml` — line-coverage reports.
@@ -14,3 +15,5 @@ files here when preparing the Software Engineering mini-project deliverables.
 
 The local validation results and checks not covered by that run are summarized
 in [P-008 system validation evidence](../evidence/P-008.md).
+
+For `main` commit `817e48f`, passing workflow run `43053958958` published `test-and-coverage-reports`.
