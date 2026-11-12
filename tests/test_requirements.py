@@ -408,6 +408,7 @@ class DemoRequirementTests(TestCase):
         self.assertTrue(AuditLog.objects.filter(action="AUTHORIZATION_DENIED").exists())
 
     def test_TC_Sec_06_encryption_tampering_fails(self):
+        # Mutating persisted ciphertext invalidates the GCM tag and raises ValueError on read.
         student = Student.objects.get(student_id="STU-2026-0001")
         with connection.cursor() as cursor:
             cursor.execute("SELECT phone FROM students_student WHERE id = %s", [student.id])
