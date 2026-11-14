@@ -1,0 +1,4 @@
+........................................................................ [ 97%]
+..                                                                       [100%]
+- generated xml file: /home/ananya/student-record-system/docs/reports/unit-test-report.xml -
+74 passed in 11.94s

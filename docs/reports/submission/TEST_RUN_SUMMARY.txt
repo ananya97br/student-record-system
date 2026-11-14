@@ -1,0 +1,69 @@
+STUDENT RECORD SYSTEM - FINAL TEST RUN SUMMARY
+===============================================
+Revision: bf8cfd4 plus current working-tree changes
+Environment: Linux x86_64, Python 3.14.4, Django 5.2.19
+
+PROJECT SUMMARY
+---------------
+The Student Record System is a modular Django/Django REST Framework application
+for student records, academic administration, enrollment, attendance, grading,
+fees, reporting, security, and auditing. It provides role-specific student,
+faculty, administrator, and system-administrator workflows through Django pages
+and REST APIs. The container path uses Nginx, Gunicorn, MySQL 8.4, Mailpit,
+deterministic document scanning, and a mock payment gateway.
+
+AUTOMATED TESTS
+---------------
+Full pytest discovery: 74 passed, 0 failed, 0 errors, 0 skipped.
+Duration: 11.945 seconds (coverage run; JUnit result)
+Canonical Django suite: 39 passed in 3.680 seconds using SQLite.
+Canonical MySQL suite: 39 passed in 22.82 seconds using MySQL 8.4/Docker.
+Browser/axe suite: 2 passed in 3.67 seconds using Playwright 1.65.1 and Chrome.
+
+COVERAGE
+--------
+Statement/code coverage: 2011 / 2712 = 74.15%
+Missing statements: 701
+Branch coverage: 248 / 598 = 41.47%
+Missing branches: 350
+Partial branches: 144
+Combined coverage.py line-plus-branch value: 68.25%
+
+SYSTEM VALIDATION
+-----------------
+Django check: PASS
+Django test suite: PASS
+Migrations and static collection: PASS
+Docker build/start with MySQL 8.4: PASS after fixing entrypoint mode 0644 -> 0755
+Health/readiness/OpenAPI smoke checks: PASS
+Live login, /me, enrollment, attendance, GPA, transcript, and dashboard: PASS
+
+PERFORMANCE EVIDENCE
+--------------------
+Existing NF-001 2,000-VU result: p95 3.95 s, failures 46.67%, thresholds FAILED.
+Existing NF-006 10,000-VU result: p95 22.14 s, failures 60.12%, thresholds FAILED.
+New k6 execution: NOT EXECUTED; k6 is not installed.
+
+OPEN LIMITATIONS
+----------------
+Production TLS/deployment review, manual accessibility review, centralized
+monitoring, and backup retention review require separate operational evidence.
+
+RAW EVIDENCE
+------------
+docs/reports/raw/
+docs/reports/unit-test-report.xml
+docs/reports/coverage-report.txt
+docs/reports/branch-coverage-report.txt
+docs/reports/coverage.xml
+docs/reports/coverage.json
+docs/reports/coverage-html/
+
+REFERENCE LINKS
+---------------
+Repository: https://github.com/ananya97br/student-record-system/tree/docs/readme-demo
+Project overview: https://github.com/ananya97br/student-record-system/blob/docs/readme-demo/README.md
+Test matrix: https://github.com/ananya97br/student-record-system/blob/docs/readme-demo/docs/TEST_MATRIX.md
+Architecture: https://github.com/ananya97br/student-record-system/blob/docs/readme-demo/docs/ARCHITECTURE.md
+Security: https://github.com/ananya97br/student-record-system/blob/docs/readme-demo/docs/SECURITY.md
+Operations: https://github.com/ananya97br/student-record-system/blob/docs/readme-demo/docs/OPERATIONS.md

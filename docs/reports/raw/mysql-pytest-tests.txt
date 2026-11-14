@@ -1,0 +1,11 @@
+Docker project: srs-report
+NAME                   IMAGE                   COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+srs-report-api-1       srs-report-api          "/app/infra/scripts/…"   api       2 minutes ago    Up 2 minutes (healthy)    8000/tcp
+srs-report-db-1        mysql:8.4               "docker-entrypoint.s…"   db        12 minutes ago   Up 12 minutes (healthy)   3306/tcp, 33060/tcp
+srs-report-mailpit-1   axllent/mailpit:v1.21   "/mailpit"               mailpit   12 minutes ago   Up 12 minutes (healthy)   0.0.0.0:1025->1025/tcp, [::]:1025->1025/tcp, 0.0.0.0:8025->8025/tcp, [::]:8025->8025/tcp, 1110/tcp
+srs-report-proxy-1     nginx:1.27-alpine       "/docker-entrypoint.…"   proxy     12 minutes ago   Up 12 minutes             0.0.0.0:8000->80/tcp, [::]:8000->80/tcp
+srs-report-web-1       srs-report-web          "/app/infra/scripts/…"   web       2 minutes ago    Up 2 minutes (healthy)    8000/tcp
+
+Canonical MySQL test suite:
+.......................................                                  [100%]
+39 passed in 22.82s
