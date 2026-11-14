@@ -40,6 +40,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        # Seed academic, user, course, and financial fixtures atomically in dependency order.
         now = timezone.now()
         today = timezone.localdate()
 
@@ -93,6 +94,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _seed_users() -> dict[str, User]:
+        # Reset demo roles, active flags, lockouts, and passwords idempotently across reruns.
         definitions = {
             "admin.demo": ("admin.demo@student-record.local", "AdminDemo!2026", User.Role.ADMIN),
             "faculty1.demo": ("faculty1.demo@student-record.local", "Faculty1Demo!2026", User.Role.FACULTY),
@@ -212,6 +214,7 @@ class Command(BaseCommand):
                     offering=offering,
                     defaults={"status": Enrollment.Status.ENROLLED, "dropped_at": None},
                 )
+            # Recompute open seats from active enrollments so capacity checks start accurate.
             active_count = Enrollment.objects.filter(offering=offering, status=Enrollment.Status.ENROLLED).count()
             offering.seats_available = max(0, offering.capacity - active_count)
             offering.save(update_fields=["seats_available", "updated_at"])
@@ -310,6 +313,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _seed_student_sequence(year, students):
+        # Keep the yearly STU-YYYY-#### counter above all seeded IDs to prevent collisions.
         highest = max(
             (int(student.student_id.rsplit("-", 1)[-1]) for student in students.values() if student.student_id.startswith(f"STU-{year}-")),
             default=0,

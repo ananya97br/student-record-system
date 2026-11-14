@@ -16,3 +16,10 @@
 14. **SSO:** not enabled; local credential login is the baseline and an SSO provider can be added behind the authentication boundary.
 15. **Encryption:** AES-256-GCM application fields plus HMAC lookup hashes for equality references. Development keys are generated into ignored `var/dev-secrets.json`; production must provide explicit secret-manager values.
 16. **Database:** SQLite is used only for a clean local/test fallback. MySQL 8 is the Docker/production-like relational database.
+
+<!-- P-010: Summary of frozen feature baseline and unresolved environment/operational limitations. -->
+## Development freeze and unresolved limitations
+
+- **Development freeze:** Feature development is frozen at the baseline enumerated above (`F-001`–`F-018`); post-freeze changes are restricted to defect fixes, security updates, and deployment hardening.
+- **Production adapter and infrastructure gaps:** Replacing development defaults (SQLite fallback, mock payment gateway, EICAR stub scanner, console email, single-entry HTTP proxy, and manual security-alert review) requires external infrastructure per [security notes](SECURITY.md) and the [operations runbook](OPERATIONS.md).
+- **Unrun environment checks:** Optional Playwright browser/axe checks (`e2e/test_portal.py`), MySQL-trigger verification, and k6 load runs remain unexecuted in constrained local environments as recorded in [P-008 validation evidence](evidence/P-008.md).
