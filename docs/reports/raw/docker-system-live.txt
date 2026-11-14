@@ -1,0 +1,14 @@
+Docker stack smoke:
+Smoke checks passed for http://127.0.0.1:8000
+Live workflow response status and body lengths:
+/health/live: HTTP 200, 96 bytes
+/api/health/ready: HTTP 200, 37 bytes
+/api/openapi.json: HTTP 200, 2950 bytes
+/login: HTTP 200, 2575 bytes
+/api/auth/login: HTTP 200, 231 bytes
+/api/auth/me: HTTP 200, 370 bytes
+/api/enrollments/eligible: HTTP 200, 693 bytes
+/api/attendance/student-summary: HTTP 200, 313 bytes
+/api/grades/gpa: HTTP 200, 326 bytes
+/api/grades/transcript: HTTP 200, 2430 bytes
+/portal/dashboard: HTTP 200, 2394 bytes

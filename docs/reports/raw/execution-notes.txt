@@ -1,0 +1,25 @@
+FINAL EXECUTION NOTES
+=====================
+
+1. The shell did not provide a `python` command. The repository virtual
+   environment `.venv/bin/python` was used for all Python commands.
+
+2. The first Docker build could not start the API because
+   `/app/infra/scripts/docker-entrypoint.sh` was not executable. The tracked
+   mode was corrected from 0644 to 0755; the stack then built and started.
+
+3. An existing Docker MySQL volume contained encrypted data made with a
+   different development encryption key. The first non-isolated restart logged
+   `ValueError: Encrypted value failed authentication`. No existing volume was
+   deleted. A fresh project/volume named `srs-report` was used for validation.
+
+4. The first MySQL test attempt stopped before tests because the MySQL user
+   could not create `test_student_records`. The CI-equivalent test database and
+   grant were prepared in the isolated test container; the canonical MySQL
+   suite then passed 39/39.
+
+5. A combined MySQL run containing both duplicated canonical and supplemental
+   test classes produced one `TC-Reg-01` INVALID_RECORD test-data/sequence
+   isolation failure. The canonical MySQL suite passed when isolated. This is
+   reported as an unresolved combined-fixture limitation, not as a passing
+   result.
